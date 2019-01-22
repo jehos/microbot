@@ -1,11 +1,15 @@
 package microbot
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 var (
 	duration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Name:    "microbot_request_duration_seconds",
-		Help:    "Histogram of the /hello request duration.",
+		Help:    "Histogram of all request duration.",
 		Buckets: []float64{0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
 	})
 
@@ -24,8 +28,8 @@ var (
 		})
 
 	accessibility = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "microbot_request_duration_seconds",
-		Help:    "Histogram of the /hello request duration.",
+		Name:    "microbot_db_ping_duration_seconds",
+		Help:    "Histogram of DB ping request duration.",
 		Buckets: []float64{0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
 	})
 )
@@ -34,4 +38,19 @@ func init() {
 	prometheus.MustRegister(duration)
 	prometheus.MustRegister(requests)
 	prometheus.MustRegister(panics)
+	prometheus.MustRegister(accessibility)
+
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				results := PingDB()
+				for _, r := range results {
+					accessibility.Observe(r.duration)
+				}
+			}
+		}
+	}()
 }

@@ -2,14 +2,37 @@ package microbot
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/elvinchan/microbot/db"
 )
 
-func PingDB() {
+type DBPingResult struct {
+	dbType   db.DBType
+	duration float64
+	err      error
+}
+
+func PingDB() []DBPingResult {
+	var results []DBPingResult
+	var wg sync.WaitGroup
 	for _, d := range dialects {
-		d.DB().Ping()
+		wg.Add(1)
+		go func(dt db.Dialect) {
+			defer wg.Done()
+			start := time.Now()
+			err := dt.DB().Ping()
+			duration := time.Since(start).Seconds()
+			results = append(results, DBPingResult{
+				dbType:   dt.DBType(),
+				duration: duration,
+				err:      err,
+			})
+		}(d)
 	}
+	wg.Wait()
+	return results
 }
 
 type TableInfo struct {
