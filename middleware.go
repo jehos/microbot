@@ -63,7 +63,7 @@ func MiddlewareWithConfig(config MiddlewareConfig) func(h http.Handler) http.Han
 			// 	return next(c)
 			// }
 
-			sw := statusWriter{ResponseWriter: w}
+			sw := StatusWriter{ResponseWriter: w}
 			defer func(begun time.Time) {
 				duration.Observe(time.Since(begun).Seconds())
 
