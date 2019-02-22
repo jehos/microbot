@@ -7,18 +7,20 @@ import (
 )
 
 var (
-	duration = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "microbot_request_duration_seconds",
-		Help:    "Histogram of all request duration.",
-		Buckets: []float64{0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
-	})
+	duration = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name: "microbot_request_duration_seconds",
+			Help: "Histogram of all request duration.",
+		},
+		[]string{"handler", "status", "method"},
+	)
 
 	requests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "microbot_requests_total",
 			Help: "Total number of all requests.",
 		},
-		[]string{"status"},
+		[]string{"handler", "status", "method"},
 	)
 
 	panics = prometheus.NewCounter(
