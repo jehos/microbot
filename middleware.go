@@ -49,13 +49,13 @@ func DefaultSkipper(w http.ResponseWriter, r *http.Request) bool {
 
 // Middleware returns a middleware which recovers from panics anywhere in the chain
 // and handles the control to the centralized HTTPErrorHandler.
-func Middleware() func(h http.Handler) http.Handler {
-	return MiddlewareWithConfig(DefaultMiddlewareConfig)
+func Middleware(handler func(r *http.Request) string) func(h http.Handler) http.Handler {
+	return MiddlewareWithConfig(handler, DefaultMiddlewareConfig)
 }
 
 // MiddlewareWithConfig returns a Middleware middleware with config.
 // See: `Middleware()`.
-func MiddlewareWithConfig(config MiddlewareConfig) func(h http.Handler) http.Handler {
+func MiddlewareWithConfig(handler func(r *http.Request) string, config MiddlewareConfig) func(h http.Handler) http.Handler {
 	// Defaults
 	if config.Skipper == nil {
 		config.Skipper = DefaultMiddlewareConfig.Skipper
@@ -77,8 +77,10 @@ func MiddlewareWithConfig(config MiddlewareConfig) func(h http.Handler) http.Han
 				d := time.Since(begun).Nanoseconds() / int64(time.Millisecond)
 				duration.WithLabelValues(r.RequestURI, s, r.Method).Observe(float64(d))
 
+				fmt.Println("-----", handler(r))
 				requests.With(prometheus.Labels{
-					"status": s,
+					"handler": handler(r),
+					"status":  s,
 				}).Inc()
 			}(time.Now())
 
