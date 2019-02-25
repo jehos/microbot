@@ -1,4 +1,4 @@
-package microbot
+package utils
 
 import (
 	"encoding/json"
@@ -15,22 +15,29 @@ func RenderJson(w http.ResponseWriter, v interface{}) {
 	w.Write(bs)
 }
 
-type Result struct {
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
+type Resp struct {
+	Result  interface{} `json:"result"`
+	Success bool        `json:"success"`
+	Error   RespError   `json:"error"`
+}
+
+type RespError struct {
+	Message string `json:"message"`
 }
 
 func RenderDataJson(w http.ResponseWriter, data interface{}) {
-	RenderJson(w, Result{Msg: "success", Data: data})
+	RenderJson(w, Resp{Result: data, Success: true})
 }
 
-func RenderMsgJson(w http.ResponseWriter, msg string) {
-	RenderJson(w, map[string]string{"msg": msg})
+func RenderErrorJson(w http.ResponseWriter, err error) {
+	RenderJson(w, Resp{Success: false, Error: RespError{
+		Message: err.Error(),
+	}})
 }
 
 func Render(w http.ResponseWriter, data interface{}, err error) {
 	if err != nil {
-		RenderMsgJson(w, err.Error())
+		RenderErrorJson(w, err)
 		return
 	}
 	RenderDataJson(w, data)

@@ -2,13 +2,35 @@ package microbot
 
 import (
 	"container/list"
-	"fmt"
+	"net/http"
 	"sync"
+
+	"github.com/elvinchan/microbot/utils"
 )
+
+var (
+	lock         sync.RWMutex
+	keyEventList KeyEventList
+)
+
+type KeyEvent struct {
+	Type    string
+	Content string
+}
 
 type KeyEventList struct {
 	data *list.List
 	max  int
+}
+
+func KeyEventController() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var v []interface{}
+		for iter := keyEventList.data.Back(); iter != nil; iter = iter.Prev() {
+			v = append(v, iter.Value)
+		}
+		utils.RenderJson(w, v)
+	})
 }
 
 func NewQueue(max int) *KeyEventList {
@@ -18,8 +40,11 @@ func NewQueue(max int) *KeyEventList {
 	return q
 }
 
-func NewKeyEvent(typ string, content string) {
-
+func NewKeyEvent(t string, c string) {
+	go keyEventList.push(KeyEvent{
+		Type:    t,
+		Content: c,
+	})
 }
 
 func (q *KeyEventList) push(v interface{}) {
@@ -39,11 +64,3 @@ func (q *KeyEventList) pop() interface{} {
 	q.data.Remove(iter)
 	return v
 }
-
-func (q *KeyEventList) dump() {
-	for iter := q.data.Back(); iter != nil; iter = iter.Prev() {
-		fmt.Println("item:", iter.Value)
-	}
-}
-
-var lock sync.RWMutex
