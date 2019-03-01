@@ -4,20 +4,18 @@ import (
 	"strings"
 )
 
+var dialects = map[string]func() Dialect{}
+
 func init() {
-	providedDialects := map[string]struct {
+	providedDialects := []struct {
 		dbType     DBType
 		getDialect func() Dialect
 	}{
-		// "mssql":    {"mssql", func() core.Driver { return &odbcDriver{} }, func() core.Dialect { return &mssql{} }},
-		// "odbc":     {"mssql", func() core.Driver { return &odbcDriver{} }, func() core.Dialect { return &mssql{} }}, // !nashtsai! TODO change this when supporting MS Access
-		"mysql": {"mysql", func() Dialect { return &mysql{} }},
-		// "mymysql":  {"mysql", func() core.Driver { return &mymysqlDriver{} }, func() core.Dialect { return &mysql{} }},
-		// "postgres": {"postgres", func() core.Driver { return &pqDriver{} }, func() core.Dialect { return &postgres{} }},
-		// "pgx":      {"postgres", func() core.Driver { return &pqDriverPgx{} }, func() core.Dialect { return &postgres{} }},
-		"sqlite3": {"sqlite3", func() Dialect { return &sqlite3{} }},
-		// "oci8":     {"oracle", func() core.Driver { return &oci8Driver{} }, func() core.Dialect { return &oracle{} }},
-		// "goracle":  {"oracle", func() core.Driver { return &goracleDriver{} }, func() core.Dialect { return &oracle{} }},
+		{"mssql", func() Dialect { return &mysql{} }},
+		{"mysql", func() Dialect { return &mysql{} }},
+		{"postgres", func() Dialect { return &postgres{} }},
+		{"sqlite3", func() Dialect { return &sqlite3{} }},
+		{"oracle", func() Dialect { return &oracle{} }},
 	}
 
 	for _, v := range providedDialects {
@@ -25,19 +23,15 @@ func init() {
 	}
 }
 
-var (
-	dialects = map[string]func() Dialect{}
-)
-
 // RegisterDialect register database dialect
 func RegisterDialect(dbType DBType, dialectFunc func() Dialect) {
 	if dialectFunc == nil {
-		panic("sensor: Register dialect is nil")
+		panic("microbot: nil dialectFunc")
 	}
 	dialects[strings.ToLower(string(dbType))] = dialectFunc
 }
 
-// QueryDialect query if registed database dialect
+// QueryDialect query database dialect if registed
 func QueryDialect(dbType DBType) Dialect {
 	if d, ok := dialects[strings.ToLower(string(dbType))]; ok {
 		return d()

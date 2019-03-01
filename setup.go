@@ -11,11 +11,11 @@ var dialects []db.Dialect
 
 func RegisterDB(d *sql.DB, dbType db.DBType) error {
 	if d == nil {
-		return errors.New("nil sql.DB")
+		return errors.New("microbot: nil DB")
 	}
 	dialect := db.QueryDialect(dbType)
 	if dialect == nil {
-		return errors.New("DBType not support")
+		return errors.New("microbot: Unsupported DBType")
 	}
 	dialect.Init(d, dbType)
 	dialects = append(dialects, dialect)

@@ -9,18 +9,18 @@ import (
 var (
 	duration = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Name: "microbot_request_duration_seconds",
-			Help: "Histogram of all request duration.",
+			Name: "microbot_http_request_duration_milliseconds",
+			Help: "Summary of http request duration in milliseconds.",
 		},
-		[]string{"handler", "status", "method"},
+		[]string{"handler", "status", "method", "ip_type"},
 	)
 
 	requests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "microbot_requests_total",
-			Help: "Total number of all requests.",
+			Name: "microbot_http_request_total",
+			Help: "Total number of http requests.",
 		},
-		[]string{"handler", "status", "method"},
+		[]string{"handler", "status", "method", "ip_type"},
 	)
 
 	panics = prometheus.NewCounter(
@@ -29,11 +29,13 @@ var (
 			Help: "Total number of panic.",
 		})
 
-	accessibility = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "microbot_db_ping_duration_seconds",
-		Help:    "Histogram of DB ping request duration.",
-		Buckets: []float64{0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
-	})
+	accessibility = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name: "microbot_db_ping_duration_milliseconds",
+			Help: "Summary of DB ping duration in milliseconds.",
+		},
+		[]string{"status"},
+	)
 )
 
 func init() {
@@ -48,9 +50,12 @@ func init() {
 		for {
 			select {
 			case <-ticker.C:
-				results := PingDB()
-				for _, r := range results {
-					accessibility.Observe(r.duration)
+				for _, r := range PingDB() {
+					status := "ok"
+					if r.err != nil {
+						status = "error"
+					}
+					accessibility.WithLabelValues(status).Observe(float64(r.duration))
 				}
 			}
 		}

@@ -2,7 +2,9 @@ package utils
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
+	"strings"
 )
 
 func RenderJson(w http.ResponseWriter, v interface{}) {
@@ -41,4 +43,35 @@ func Render(w http.ResponseWriter, data interface{}, err error) {
 		return
 	}
 	RenderDataJson(w, data)
+}
+
+func IsPublicIP(ip string) bool {
+	netIP := net.ParseIP(ip)
+	if netIP.IsLoopback() || netIP.IsLinkLocalMulticast() || netIP.IsLinkLocalUnicast() {
+		return false
+	}
+	if ip4 := netIP.To4(); ip4 != nil {
+		switch true {
+		case ip4[0] == 10:
+			return false
+		case ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31:
+			return false
+		case ip4[0] == 192 && ip4[1] == 168:
+			return false
+		default:
+			return true
+		}
+	}
+	return false
+}
+
+func RealIP(r *http.Request) string {
+	if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
+		return strings.Split(ip, ", ")[0]
+	}
+	if ip := r.Header.Get("X-Real-IP"); ip != "" {
+		return ip
+	}
+	ra, _, _ := net.SplitHostPort(r.RemoteAddr)
+	return ra
 }

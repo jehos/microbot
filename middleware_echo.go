@@ -5,6 +5,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/elvinchan/microbot/utils"
+
 	"github.com/labstack/echo"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -22,12 +24,17 @@ func MiddlewareEchoWithConfig(config MiddlewareConfig) echo.MiddlewareFunc {
 			defer func(begun time.Time) {
 				s := fmt.Sprintf("%d", c.Response().Status)
 				d := time.Since(begun).Nanoseconds() / int64(time.Millisecond)
-				duration.WithLabelValues(c.Path(), s, c.Request().Method).Observe(float64(d))
+				ipType := "private"
+				if utils.IsPublicIP(c.RealIP()) {
+					ipType = "public"
+				}
 
+				duration.WithLabelValues(c.Path(), s, c.Request().Method, ipType).Observe(float64(d))
 				requests.With(prometheus.Labels{
 					"handler": c.Path(),
 					"status":  s,
 					"method":  c.Request().Method,
+					"ip_type": ipType,
 				}).Inc()
 			}(time.Now())
 
@@ -40,7 +47,6 @@ func MiddlewareEchoWithConfig(config MiddlewareConfig) echo.MiddlewareFunc {
 					stack := make([]byte, config.StackSize)
 					length := runtime.Stack(stack, !config.DisableStackAll)
 					if !config.DisablePrintStack {
-						// c.Logger().Printf("[PANIC RECOVER] %v %s\n", err, stack[:length])
 						fmt.Printf("[PANIC RECOVER] %v %s\n", err, stack[:length])
 					}
 					c.Error(err)

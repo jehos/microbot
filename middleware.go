@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/elvinchan/microbot/utils"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -75,12 +76,17 @@ func MiddlewareWithConfig(handler func(r *http.Request) string, config Middlewar
 			defer func(begun time.Time) {
 				s := fmt.Sprintf("%d", sw.status)
 				d := time.Since(begun).Nanoseconds() / int64(time.Millisecond)
-				duration.WithLabelValues(r.RequestURI, s, r.Method).Observe(float64(d))
+				ipType := "private"
+				if utils.IsPublicIP(utils.RealIP(r)) {
+					ipType = "public"
+				}
 
-				fmt.Println("-----", handler(r))
+				duration.WithLabelValues(r.RequestURI, s, r.Method, ipType).Observe(float64(d))
 				requests.With(prometheus.Labels{
 					"handler": handler(r),
 					"status":  s,
+					"method":  r.Method,
+					"ip_type": ipType,
 				}).Inc()
 			}(time.Now())
 
@@ -93,10 +99,8 @@ func MiddlewareWithConfig(handler func(r *http.Request) string, config Middlewar
 					stack := make([]byte, config.StackSize)
 					length := runtime.Stack(stack, !config.DisableStackAll)
 					if !config.DisablePrintStack {
-						// c.Logger().Printf("[PANIC RECOVER] %v %s\n", err, stack[:length])
 						fmt.Printf("[PANIC RECOVER] %v %s\n", err, stack[:length])
 					}
-					// c.Error(err)
 					fmt.Print(err)
 
 					panics.Inc()

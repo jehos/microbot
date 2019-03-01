@@ -10,7 +10,7 @@ import (
 
 type DBPingResult struct {
 	dbType   db.DBType
-	duration float64
+	duration int64
 	err      error
 }
 
@@ -23,7 +23,7 @@ func PingDB() []DBPingResult {
 			defer wg.Done()
 			start := time.Now()
 			err := dt.DB().Ping()
-			duration := time.Since(start).Seconds()
+			duration := time.Since(start).Nanoseconds() / int64(time.Millisecond)
 			results = append(results, DBPingResult{
 				dbType:   dt.DBType(),
 				duration: duration,

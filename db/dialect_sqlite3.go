@@ -59,7 +59,7 @@ func (db *sqlite3) GetColumns(tableName string) ([]Column, error) {
 	}
 
 	if name == "" {
-		return nil, errors.New("no table named " + tableName)
+		return nil, errors.New("microbot: no table named " + tableName)
 	}
 
 	nStart := strings.Index(name, "(")

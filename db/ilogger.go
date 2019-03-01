@@ -3,7 +3,6 @@ package db
 type LogLevel int
 
 const (
-	// !nashtsai! following level also match syslog.Priority value
 	LOG_DEBUG LogLevel = iota
 	LOG_INFO
 	LOG_WARNING

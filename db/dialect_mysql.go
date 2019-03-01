@@ -52,15 +52,13 @@ func (db *mysql) GetColumns(tableName string) ([]Column, error) {
 
 	var cols []Column
 	for rows.Next() {
-		col := new(Column)
-		col.Indexes = make(map[string]int)
-
 		var columnName, isNullable, colType, colKey, extra, comment string
 		var colDefault *string
-		err = rows.Scan(&columnName, &isNullable, &colDefault, &colType, &colKey, &extra, &comment)
-		if err != nil {
+		if err = rows.Scan(&columnName, &isNullable, &colDefault, &colType, &colKey, &extra, &comment); err != nil {
 			return nil, err
 		}
+		col := new(Column)
+		col.Indexes = make(map[string]int)
 		// colName := strings.Trim(columnName, "` ")
 		col.Comment = comment
 		if isNullable == "YES" {
@@ -77,7 +75,7 @@ func (db *mysql) GetColumns(tableName string) ([]Column, error) {
 		if extra == "auto_increment" {
 			col.IsAutoIncrement = true
 		}
-		cols = append(cols)
+		cols = append(cols, *col)
 	}
 	return cols, nil
 }
@@ -117,10 +115,9 @@ func (db *mysql) GetIndexes(tableName string) (map[string]Index, error) {
 		var index Index
 		var ok bool
 		if index, ok = indexes[indexName]; !ok {
-			i := new(Index)
 			index.Type = indexType
 			index.Name = indexName
-			indexes[indexName] = *i
+			indexes[indexName] = index
 		}
 		index.AddColumn(colName)
 	}
