@@ -21,12 +21,12 @@ func MetricsController() http.Handler {
 		// Routing
 		t := r.FormValue("t")
 		switch t {
-		case "promethues":
-			promhttp.Handler().ServeHTTP(w, r)
 		case "pprof":
 			ProfController().ServeHTTP(w, r)
 		case "db":
 			// TODO
+		default:
+			promhttp.Handler().ServeHTTP(w, r)
 		}
 	})
 }
