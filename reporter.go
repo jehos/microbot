@@ -23,7 +23,7 @@ func PingDB() []DBPingResult {
 			defer wg.Done()
 			start := time.Now()
 			err := dt.DB().Ping()
-			duration := time.Since(start).Nanoseconds() / int64(time.Millisecond)
+			duration := time.Since(start).Nanoseconds()
 			results = append(results, DBPingResult{
 				dbType:   dt.DBType(),
 				duration: duration,

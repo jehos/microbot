@@ -31,8 +31,8 @@ var (
 
 	accessibility = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Name: "microbot_db_ping_duration_milliseconds",
-			Help: "Summary of DB ping duration in milliseconds.",
+			Name: "microbot_db_ping_duration_nanoseconds",
+			Help: "Summary of DB ping duration in nanoseconds.",
 		},
 		[]string{"status"},
 	)
